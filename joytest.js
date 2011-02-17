@@ -1,28 +1,41 @@
 #!/usr/bin/env seed
 
-
 // http://www.latrobe.edu.au/philosophy/phimvt/joy/j03atm.html
 
 
-add = { floop : function(stack) { var value = stack.pop(); stack[stack.length-1] += value; } }
-dot = { floop : function(stack) { print(stack.pop()); } }
+add = { floop : function(stack) { var value = stack.pop(); stack[stack.length-1] += value; return stack; } }
+dot = { floop : function(stack) { print(stack.pop()); return stack; } }
+dup = { floop : function(stack) { stack[stack.length] = stack[stack.length-1].copy(); return stack; } }
+swap = { floop : function(stack) { var value = stack[stack.length-2]; stack[stack.length-2] = stack[stack.length-1]; stack[stack.length-1] = value; return stack; } }
+pop = { floop : function(stack) { stack.pop(); return stack; } }
 
-testlist = [ [ 12, 13, 14 ], dot, 4, 3, add, 1, 7, add, add, dot, true, dot, false, dot, "hello", dot ];
+testlist = [ [ 12, 13, 14 ], dup, swap, pop, dot, 4, 3, add, 1, 7, add, add, dot, true, dot, false, dot, "hello", dot ];
 
-Number.prototype.floop = function (stack) { stack.push(this); }
-Boolean.prototype.floop = function (stack) { stack.push(this); }
-String.prototype.floop = function (stack) { stack.push(this); }
-Array.prototype.floop = function (stack) { stack.push(this); }
+Number.prototype.floop = function (stack) { stack.push(this); return stack; }
+Boolean.prototype.floop = function (stack) { stack.push(this); return stack; }
+String.prototype.floop = function (stack) { stack.push(this); return stack; }
+Array.prototype.floop = function (stack) { stack.push(this); return stack; }
+
+Number.prototype.copy = function () { return this; }
+Boolean.prototype.copy = function () { return this; }
+String.prototype.copy = function () { return String(this); }
+Array.prototype.copy = function () { return this.concat(); }
+
+// Additionaly we should support 
+//    set (to be strictly compatible with Joy)
+//    file (however Joy does it)
+//    dictionary (seems useful)
+
+stack = []
+
+for (var i = 0; i < testlist.length; i++) {
+    stack = testlist[i].floop(stack);
+}
 
 //
 // In addition to Number, we should support
 //   character, string, truth value, and set
 //   and list/quotation
-//
-
-//
-// dup, swap, pop  - stack operations
-// get and put - I/O operations
 //
 
 // stack - push a copy of the stack onto the stack
@@ -35,12 +48,7 @@ Array.prototype.floop = function (stack) { stack.push(this); }
 // leaf type is anything not a list
 // tree is a leaf type or a (possibly empty) list of trees
 
-// Unary:
-// pop
-// dup 
-
 // Binary:
-// swap
 // popd - remove the second element
 // popop - remove the first and second element
 // dupd - duplicate the second element
@@ -64,9 +72,4 @@ Array.prototype.floop = function (stack) { stack.push(this); }
 
 
 
-stack = []
-
-for (var i = 0; i < testlist.length; i++) {
-    testlist[i].floop(stack);
-}
 
