@@ -3,9 +3,11 @@
 // http://www.latrobe.edu.au/philosophy/phimvt/joy/j03atm.html
 
 //
-// In addition to Number, we should support
-//   character, string, truth value, and set
-//   and list/quotation
+// Additionaly we should support
+//    character (well joy supports it, as a thing separater from a single character string)
+//    set (to be strictly compatible with Joy)
+//    file (however Joy does it)
+//    dictionary (seems useful)
 //
 
 // numeric types are integers and characters,
@@ -14,6 +16,20 @@
 // leaf type is anything not a list
 // tree is a leaf type or a (possibly empty) list of trees
 
+Number.prototype.floop = function (stack) { stack.push(this); return stack; }
+Boolean.prototype.floop = function (stack) { stack.push(this); return stack; }
+String.prototype.floop = function (stack) { stack.push(this); return stack; }
+Array.prototype.floop = function (stack) { stack.push(this); return stack; }
+
+Number.prototype.copy = function () { return this; }
+Boolean.prototype.copy = function () { return this; }
+String.prototype.copy = function () { return String(this); }
+Array.prototype.copy = function () { return this.concat(); }
+
+//
+//
+//
+//
 
 add = { floop : function(stack) { var value = stack.pop(); stack[stack.length-1] += value; return stack; } }
 dot = { floop : function(stack) { print(stack.pop()); return stack; } }
@@ -30,37 +46,14 @@ stack = { floop : function(stack) { var value = stack.copy(); stack[stack.length
 unstack = { floop : function(stack) { var value = stack.pop(); return value; } }
 newstack = { floop : function(stack) { return []; } }
 
-
-testlist = [ [ 12, 13, 14 ], dup, swap, pop, dot, 4, 3, add, 1, 7, add, add, dot, 
-	     true, dot, false, dot, "hello", dot,
-	     1, 2, 3, 4, stack, 5, 6, dot, dot, swap, dot, swap, dot, swap, dot, swap, dot, 
-	     unstack, dot, dot, dot, dot, newstack, stack, dot ];
-
-Number.prototype.floop = function (stack) { stack.push(this); return stack; }
-Boolean.prototype.floop = function (stack) { stack.push(this); return stack; }
-String.prototype.floop = function (stack) { stack.push(this); return stack; }
-Array.prototype.floop = function (stack) { stack.push(this); return stack; }
-
-Number.prototype.copy = function () { return this; }
-Boolean.prototype.copy = function () { return this; }
-String.prototype.copy = function () { return String(this); }
-Array.prototype.copy = function () { return this.concat(); }
-
-// Additionaly we should support 
-//    set (to be strictly compatible with Joy)
-//    file (however Joy does it)
-//    dictionary (seems useful)
-
-stack = []
-
-for (var i = 0; i < testlist.length; i++) {
-    stack = testlist[i].floop(stack);
-}
-
 // Binary:
 // popd - remove the second element
 // popop - remove the first and second element
 // dupd - duplicate the second element
+
+popd = { floop : function(stack) { stack[stack.length-2] = stack[stack.length-1]; stack.length--; return stack; } }
+popop = { floop : function(stack) { stack.length -= 2; return stack; } }
+dupd = { floop : function(stack) { stack.push(stack[stack.length-2].copy()); return stack; } }
 
 // Ternary:
 // swapd - swap the second and third
@@ -69,6 +62,16 @@ for (var i = 0; i < testlist.length; i++) {
 // choice - X Y Z 
 //                  -- if X then Y
 //                  -- if !X then Z
+
+swapd = { floop : function(stack) { var value = stack[stack.length-3]; stack[stack.length-3] = stack[stack.length-2]; stack[stack.length-2] = value; return stack; } }
+rollup = { floop : function(stack) { return swapd.floop(swap.floop(stack)); } }
+rolldown = { floop : function(stack) { return swap.floop(swapd.floop(stack)); } }
+choice = { floop : function(stack) { if (stack[stack.length-3] == true) 
+				     { stack[stack.length-3] = stack[stack.length-2]; } 
+				     else 
+				     { stack[stack.length-3] = stack[stack.length-1]; } 
+				     stack.length -= 2; return stack; } }
+
 
 // opcase 
 //   The opcase operator matches the type of the item with the first 
@@ -87,5 +90,42 @@ for (var i = 0; i < testlist.length; i++) {
 //          -- successor, predecessor, absolute value, signum (-1,0,+1)
 //
 //  
+
+// first, second, third -- replace the sequence on the top of the stack with it's 1st, 2nd, 3rd member
+// rest - replace the sequence on the top of the stack with the same sequence less the first member.
+//
+// cons -- stack should be sequence member, becomes sequence with member as it's first element
+// swons -- swap cons
+//
+// uncons, unswons -- The uncons operator replaces the aggregate element by two elements, the first and the rest, with the rest on top. The unswons operator does the same, but with the first on top. 
+//
+// at, of, drop, take
+//     These four binary operators expect an aggregate and a number. That number is used for 
+//     indexing into the aggregate. The at operator expects the aggregate A and above that a
+//     number N, it returns that member of the aggregate which is at the N-th position in the
+//     aggregate. The of operator expects a number N and above that an aggregate A, it returns
+//     the N-th member of A. So the two operators are converses of each other. The drop and 
+//     take operators both expect an aggregate A and above that a number N. The drop operator 
+//     returns an aggragate like A except that the first N elements have been removed. The 
+//     take operator returns an aggregate like A except that only the first N elements have 
+//     been retained. For all four operators in the case of sequences the sequence ordering
+//     is used, and for sets the underlying ordering is used. 
+// 
+
+
+
+
+
+testlist = [ [ 12, 13, 14 ], dup, swap, pop, dot, 4, 3, add, 1, 7, add, add, dot, 
+	     true, dot, false, dot, "hello", dot,
+	     1, 2, 3, 4, stack, 5, 6, dot, dot, swap, dot, swap, dot, swap, dot, swap, dot, 
+	     unstack, dot, dot, dot, dot, newstack, stack, dot ];
+
+stack = []
+
+for (var i = 0; i < testlist.length; i++) {
+    stack = testlist[i].floop(stack);
+}
+
 
 
