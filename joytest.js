@@ -114,18 +114,47 @@ choice = { floop : function(stack) { if (stack[stack.length-3] == true)
 
 
 
+//        i     x     y
+//
+// The i combinator pops the quotation off the stack and executes it, effectively by dequoting. 
+// The x combinator leaves the quotation on the stack and executes it. Consequently the x 
+//    combinator will be executing on a stack which has as its top element the very same 
+//    quotation which it is currently executing. 
+// The y combinator first converts the quotation [P] into a different quotation [Q] with the 
+//    following strange property: if [Q] is ever called by some combinator, then it builds a 
+//    copy of itself on top of the stack and then executes the [P]-part of itself. After this 
+//    conversion, the y combinator calls the [Q] it has constructed. In this way the y 
+//    combinator builds some of the behaviour of the x combinator into the [Q].
 
-
-testlist = [ [ 12, 13, 14 ], dup, swap, pop, dot, 4, 3, add, 1, 7, add, add, dot, 
-	     true, dot, false, dot, "hello", dot,
-	     1, 2, 3, 4, stack, 5, 6, dot, dot, swap, dot, swap, dot, swap, dot, swap, dot, 
-	     unstack, dot, dot, dot, dot, newstack, stack, dot ];
-
-stack = []
-
-for (var i = 0; i < testlist.length; i++) {
-    stack = testlist[i].floop(stack);
+function execute(stack, quote) {
+    for (var i = 0; i < quote.length; i++) {
+	stack = quote[i].floop(stack);
+    }
+    return stack;
 }
+
+function buildQ(P) {
+    var value = [ 0, P, i ];
+    value[0] = value;
+    return value;
+} 
+
+i = { floop : function(stack) { var quote = stack.pop(); return execute(stack, quote); } }
+x = { floop : function(stack) { return execute(stack, stack[stack.length-1].copy()); } }
+y = { floop : function(stack) { var Q = buildQ(stack.pop()); return execute(stack, Q); } }
+
+quote = [ [ 12, 13, 14 ], dup, swap, pop, dot, 4, 3, add, 1, 7, add, add, dot, 
+	  true, dot, false, dot, "hello", dot,
+	  1, 2, 3, 4, stack, 5, 6, dot, dot, swap, dot, swap, dot, swap, dot, swap, dot, 
+	  unstack, dot, dot, dot, dot, newstack, stack, dot ];
+
+
+stack = [];
+execute(stack, quote);
+execute([], [ [ 82, dot ], i ]);
+execute([], [ [ dot, 82, dot ], x ]);
+execute([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], [ [ swap, dot, i ], y ]);
+
 
 
 
